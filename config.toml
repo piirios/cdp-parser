@@ -1,6 +1,5 @@
 spacename = "mp2i-pv"
-get_file = true
-path_to_save = "votre/dossier" #le dossier où sera téléchargé l'ensemble de cahier de prépa
+path_to_save = "votre/dossier"
 
 [credential]
 username = "votre@mail.com"
