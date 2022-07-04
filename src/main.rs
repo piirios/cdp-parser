@@ -30,7 +30,9 @@ impl WindowString for String {
         .replace("|", "")
         .replace("?", "")
         .replace("*", "")
+        .replace(":", "")
     }
+
 }
 impl WindowString for &str {
     fn window_string(&self) -> String {
@@ -42,6 +44,7 @@ impl WindowString for &str {
         .replace("|", "")
         .replace("?", "")
         .replace("*", "")
+        .replace(":", "")
     }
 }
 
@@ -66,6 +69,9 @@ impl CdpFile {
      * cookie: Le cookie de la session
      */
     async fn save(&self, base_url: String, parser: Arc<CdpParser>) -> Result<()> {
+        println!("a");
+        dbg!(&self.fpath);
+        dbg!(Path::new(&base_url).join(self.fpath.to_owned()));
         fs::create_dir_all(Path::new(&base_url).join(self.fpath.to_owned())).await?;
 
         let content = parser
@@ -80,6 +86,12 @@ impl CdpFile {
             .fname
             .window_string();
 
+        dbg!(&self.fpath);
+        dbg!(&fname_correct);
+        dbg!(&base_url);
+        dbg!(Path::new(&base_url)
+        .join(self.fpath.to_owned())
+        .join(fname_correct.to_owned()));
 
         let mut dest = File::create(
             Path::new(&base_url)
@@ -87,6 +99,7 @@ impl CdpFile {
                 .join(fname_correct.to_owned()),
         )
         .await?;
+        println!("aaa");
 
         let mut pos = 0;
         while pos < content.len() {
