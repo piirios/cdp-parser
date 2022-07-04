@@ -17,6 +17,34 @@ use tokio::io::AsyncWriteExt;
 
 use async_recursion::async_recursion;
 
+trait WindowString {
+    fn window_string(&self) -> String;
+}
+impl WindowString for String {
+    fn window_string(&self) -> String {
+        self.replace("<", "")
+        .replace(">", "")
+        .replace("\"", "")
+        .replace("/", "")
+        .replace("\\", "")
+        .replace("|", "")
+        .replace("?", "")
+        .replace("*", "")
+    }
+}
+impl WindowString for &str {
+    fn window_string(&self) -> String {
+        self.replace("<", "")
+        .replace(">", "")
+        .replace("\"", "")
+        .replace("/", "")
+        .replace("\\", "")
+        .replace("|", "")
+        .replace("?", "")
+        .replace("*", "")
+    }
+}
+
 #[derive(Debug)]
 struct CdpFile {
     fname: String,
@@ -50,16 +78,9 @@ impl CdpFile {
         //dbg!(&response);
         let fname_correct = self
             .fname
-            .replace("<", "")
-            .replace(">", "")
-            .replace("\"", "")
-            .replace("/", "")
-            .replace("\\", "")
-            .replace("|", "")
-            .replace("?", "")
-            .replace("*", "");
+            .window_string();
 
-            
+
         let mut dest = File::create(
             Path::new(&base_url)
                 .join(self.fpath.to_owned())
@@ -266,7 +287,7 @@ impl CdpParser {
 
                 let mut new_path = path.clone();
                 new_path.push_str("/");
-                new_path.push_str(folder_name);
+                new_path.push_str(&folder_name.window_string());
 
                 //dbg!(self.parse_folder(format!("docs{}",link), &new_path).await?).append(&mut res);
                 res.append(
