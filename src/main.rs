@@ -48,10 +48,22 @@ impl CdpFile {
             .bytes()
             .await?;
         //dbg!(&response);
+        let fname_correct = self
+            .fname
+            .replace("<", "")
+            .replace(">", "")
+            .replace("\"", "")
+            .replace("/", "")
+            .replace("\\", "")
+            .replace("|", "")
+            .replace("?", "")
+            .replace("*", "");
+
+            
         let mut dest = File::create(
             Path::new(&base_url)
                 .join(self.fpath.to_owned())
-                .join(self.fname.to_owned()),
+                .join(fname_correct.to_owned()),
         )
         .await?;
 
@@ -63,8 +75,6 @@ impl CdpFile {
 
         Ok(())
     }
-
-
 }
 
 pub struct CdpParser {
@@ -217,12 +227,12 @@ impl CdpParser {
     }
 
     /*
-    * Fonction permettant de parser un dossier de fichier où:
-    *   enter_url: url d'entrée du dossier de fichier
-    *   path: chemin d'accès de base des fichiers
-    *
-    *   => Vec de fichier
-    */
+     * Fonction permettant de parser un dossier de fichier où:
+     *   enter_url: url d'entrée du dossier de fichier
+     *   path: chemin d'accès de base des fichiers
+     *
+     *   => Vec de fichier
+     */
     #[async_recursion]
     async fn parse_folder(&self, enter_url: String, path: &String) -> Result<Vec<CdpFile>> {
         let content = self
@@ -235,7 +245,6 @@ impl CdpParser {
         let mut res = Vec::new();
 
         for el in content.split("<p class=\"").skip(1) {
-
             if el.contains("icon-minilock") {
                 continue;
             }
@@ -295,29 +304,40 @@ impl CdpParser {
     }
 
     /*
-    * Fonction permettant de parser le menu de cahier de prépa 
-    *
-    *   => Vec d'un tuple où le premier élément est le nom du dossier et le second l'url d'entrée
-    */
+     * Fonction permettant de parser le menu de cahier de prépa
+     *
+     *   => Vec d'un tuple où le premier élément est le nom du dossier et le second l'url d'entrée
+     */
     async fn parse_menu(&self) -> Result<Vec<(String, String)>> {
         let mut res = Vec::new();
-        let content = self.client.get(self.build_url("")).send().await?.text().await?;
+        let content = self
+            .client
+            .get(self.build_url(""))
+            .send()
+            .await?
+            .text()
+            .await?;
         for section in content.split("<h3>").skip(1) {
             if section.contains(r#"<a href="docs"#) {
-                let title = section.before("<").context("failed to parse menu section title")?.to_string();
-                let url = section.split("<a").skip(1).map(|balise| {
-                    let link_after = balise.after(r#"href=""#);
-                    link_after.before(r#"">"#).unwrap().to_string()
-                }).find(|link| link.contains("docs")).context("failed to find the link to the file page")?;
+                let title = section
+                    .before("<")
+                    .context("failed to parse menu section title")?
+                    .to_string();
+                let url = section
+                    .split("<a")
+                    .skip(1)
+                    .map(|balise| {
+                        let link_after = balise.after(r#"href=""#);
+                        link_after.before(r#"">"#).unwrap().to_string()
+                    })
+                    .find(|link| link.contains("docs"))
+                    .context("failed to find the link to the file page")?;
 
                 res.push((title, url))
             }
-
         }
         Ok(res)
     }
-    
-
 }
 
 #[tokio::main]
@@ -338,15 +358,15 @@ async fn main() -> Result<()> {
 
     for (base_path, base_url) in menu.iter() {
         let files = parser_atomic
-        .parse_folder(base_url.to_string(), base_path)
-        .await?;
+            .parse_folder(base_url.to_string(), base_path)
+            .await?;
 
         for file in files {
             //let cookie = parser.cookie.clone();
             let base_path = config.path_to_save.clone();
             //dbg!(file.save(cookie, base_path).await);
             let cloned = parser_atomic.clone();
-    
+
             tokio::spawn(async move {
                 file.save(base_path, cloned)
                     .await
