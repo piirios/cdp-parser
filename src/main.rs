@@ -1,3 +1,4 @@
+mod args;
 mod config;
 mod string_utils;
 
@@ -15,6 +16,9 @@ use tokio::fs::File;
 use tokio::io;
 use tokio::io::AsyncWriteExt;
 
+use args::Args;
+use clap::Parser;
+
 use async_recursion::async_recursion;
 
 trait WindowString {
@@ -23,30 +27,29 @@ trait WindowString {
 impl WindowString for String {
     fn window_string(&self) -> String {
         self.replace("<", "")
-        .replace(">", "")
-        .replace("\"", "")
-        .replace("/", "")
-        .replace("\\", "")
-        .replace("|", "")
-        .replace("?", "")
-        .replace("*", "")
-        .replace(":", "")
-        .replace(".", "")
+            .replace(">", "")
+            .replace("\"", "")
+            .replace("/", "")
+            .replace("\\", "")
+            .replace("|", "")
+            .replace("?", "")
+            .replace("*", "")
+            .replace(":", "")
+            .replace(".", "")
     }
-
 }
 impl WindowString for &str {
     fn window_string(&self) -> String {
         self.replace("<", "")
-        .replace(">", "")
-        .replace("\"", "")
-        .replace("/", "")
-        .replace("\\", "")
-        .replace("|", "")
-        .replace("?", "")
-        .replace("*", "")
-        .replace(":", "")
-        .replace(".", "")
+            .replace(">", "")
+            .replace("\"", "")
+            .replace("/", "")
+            .replace("\\", "")
+            .replace("|", "")
+            .replace("?", "")
+            .replace("*", "")
+            .replace(":", "")
+            .replace(".", "")
     }
 }
 
@@ -80,12 +83,11 @@ impl CdpFile {
             .await?
             .bytes()
             .await?;
-        
+
         let mut dest = File::create(
             Path::new(&base_url)
                 .join(self.fpath.to_owned())
-                .join(self
-                    .fname.to_owned()),
+                .join(self.fname.to_owned()),
         )
         .await?;
 
@@ -365,11 +367,12 @@ impl CdpParser {
 #[tokio::main]
 async fn main() -> Result<()> {
     //Parse la configuration
-    let conf_path = env::args()
-        .nth(1)
-        .context("failed to parse configuration filepath")?;
+    /* let conf_path = env::args()
+    .nth(1)
+    .context("failed to parse configuration filepath")?;
     let content = fs::read_to_string(conf_path).await?;
-    let config: CdpConfig = toml::from_str(&content)?;
+    let config: CdpConfig = toml::from_str(&content)?; */
+    let config: CdpConfig = Args::parse().into();
 
     let mut parser = CdpParser::new(config.credential, config.spacename);
     parser.auth().await?;
